@@ -9,6 +9,8 @@
 # A time-stamped log file of all steps that are conducted is created.
 # This file also shows input file MD5 checksums as well as MD5 checksums for all output files.
 #
+# TODO: Figure out a way to run the filter_fasta.py command on R1 and R2 in parallel to increase speed.
+#
 # Created by Michael C. Nelson on 2014-09-09.
 # Last revised: 2014-09-09
 # Revision #: 1
