@@ -1,0 +1,126 @@
+#!/bin/bash
+
+## pull in macqiime path
+source /macqiime/configs/bash_profile.txt
+
+# Define script variables
+DATE=`date +%Y-%m-%d`
+TIME=`date +%H:%M`
+TM=`date +%Y%m%d-%H%M`
+MAP=$1
+seqsfna=$2
+READ1=$3
+READ2=$4
+LOG=Log_$TM.txt
+
+#Create log file
+echo "Script executed on $DATE at $TIME using the command call: Per_sample_raw_reads.sh $*" | tee $LOG
+echo ''
+# Initiail sanity checking for script operation
+# Are the correct number of arguments given?
+if [ "$1" = "" ]; then
+    echo '' | tee  -a $LOG
+    echo 'ERROR: No arguments were passed to script.' | tee  -a $LOG
+    echo 'USAGE: Per_sample_raw_reads.sh Map.txt seqs.fna Undetermined_R1.fastq.gz Undetermined_R2.fastq.gz' | tee -a $LOG
+    echo '' | tee  -a $LOG
+    exit 1
+elif [ "$(($# % 4))" != 0 ]; then
+    echo '' | tee  -a $LOG
+    echo 'ERROR: Invalid number of arguments given.' | tee  -a $LOG
+    echo 'USAGE: Per_sample_raw_reads.sh Map.txt seqs.fna Undetermined_R1.fastq.gz Undetermined_R2.fastq.gz' | tee  -a $LOG
+    echo '' | tee  -a $LOG
+    exit 1
+fi
+
+# Are the require input files in the current dir?
+if [ ! -f $MAP ] && [ ! -f $seqsfna ] && [ ! -f $READ1 ] && [ ! -f $READ2 ]; then
+    echo '' | tee  -a $LOG
+    echo 'ERROR: Required input files could not be found.' | tee  -a $LOG
+    echo 'Script must be executed in the directory containing the Undertermined Read 1, Read 2, and Index files.'  | tee  -a $LOG
+    echo 'USAGE: Per_sample_raw_reads.sh Map.txt seqs.fna Undetermined_R1.fastq.gz Undetermined_R2.fastq.gz' | tee  -a $LOG
+    echo '' | tee  -a $LOG
+    exit 1
+fi
+
+# Check to see if GNU parallel is installed.
+if [ ! type parallel 2>/dev/null ]; then
+	SMP=TRUE
+else
+	SMP=FALSE
+fi
+
+# Unzip the input raw read files, won't affect them if they're already unzipped but will throw a non-lethal gzip error
+if $SMP; then
+	gunzip $READ1
+	gunzip $READ2
+else
+	parallel gunzip ::: $READ1 $READ2
+fi
+
+R1=`echo $READ1 | sed 's/.gz//'`
+#echo $R1
+R2=`echo $READ2 | sed 's/.gz//'`
+#echo $R2
+
+# Lets start actually doing something why don't we
+line=1                                                # We start with line 1
+total=`grep -c '^' $1`                                # Determine how many lines are actually in the file (safer than wc -l)
+(( samples = $total - 1 ))                            # Total number of samples should be num lines minus header line
+echo '' | tee  -a $LOG
+echo "There are $samples samples in your mapfile." | tee  -a $LOG
+echo '' | tee  -a $LOG
+DATE=`date +%Y-%m-%d`                                         
+TIME=`date +%H:%M`                                            
+echo "$DATE $TIME: Proceeding to demultiplex the raw reads into per-sample R1 and R2 files." | tee  -a $LOG
+
+while [ $line -lt $total ] 		                                   # While the current line number is less than the total number of sample lines, 
+do                             	                                   # Do the following actions
+	DATE=`date +%Y-%m-%d`                                         # Reset Date
+	TIME=`date +%H:%M`                                            # Reset Time
+	printf "$DATE $TIME   " | tee  -a $LOG                         # Print time stamp so user can track progress rate
+	printf "Sample: $line   " | tee  -a $LOG 	                   # First we'll print the current sample number
+	(( line++ )) 	                                              # Now we need to increase the line count to dissociate from the header line
+	sampleID=`sed -n "$line{p;q;}" $MAP | cut -f1,1`              # Now we find out what the sample ID is
+	names=$sampleID.txt                                           # Set an output file for the read names based on the sample ID
+	printf "$sampleID	" | tee  -a $LOG                           # Print what the name of the names file is for each sample
+	touch $names                                                  # Create the output file as empty
+	count=`grep -c $sampleID $seqsfna`                            # Check to see how many reads are in seqs.fna
+	echo "$count seqs" | tee  -a $LOG                             # Print out how many sequences are present for the sample
+	grep $sampleID $seqsfna | tr -d '>' | cut -d\  -f2,2 > $names # Compile the list of SeqIDs for filter_fasta command
+	RAW1=$sampleID"_R1.fastq"                                     # Define the Read1 output file
+	RAW2=$sampleID"_R2.fastq"                                     # Define the Read2 output file
+	filter_fasta.py -f $R1 -o $RAW1 -s $names                     # Create Read1 raw read file
+	filter_fasta.py -f $R2 -o $RAW2 -s $names                     # Create Read2 raw read file
+	if $SMP; then                                                 # Now we need to compress the files b/c thats what the SRA wants.
+		gzip $RAW1               
+		gzip $RAW2
+	else
+		parallel gzip ::: $RAW1 $RAW2
+	fi
+	rm $names                                                     # We no longer need the names file so let's get rid of it
+done
+
+# Cleanup phase: step 1, re-zip the input files to again save file space
+if $SMP; then
+	gzip $R1
+	gzip $R2
+else
+	parallel gzip ::: $R1 $R2
+fi
+
+# Step 2, calculate md5 checksums for all of the raw read files. These are needed for SRA submissions and also just nice to have.
+echo '' | tee -a $LOG
+echo '' | tee -a $LOG
+DATE=`date +%Y-%m-%d`                                         
+TIME=`date +%H:%M`                                            
+echo "$DATE $TIME: Calculating md5 checksum values for all sample files." | tee -a $LOG
+md5sum *_R1.fastq.gz | tee -a $LOG | tee md5sums.txt
+md5sum *_R2.fastq.gz | tee -a $LOG | tee -a md5sums.txt
+
+DATE=`date +%Y-%m-%d`                                         
+TIME=`date +%H:%M`                                            
+echo '' | tee -a $LOG
+echo '' | tee -a $LOG
+echo "$DATE $TIME: Script is now finished." | tee -a $LOG
+echo "Each sample should have a gzip compressed R1 and R2 read file that you will need to upload to the SRA." | tee -a $LOG
+echo "md5 checksum values have been calculated for these files and can be found in the md5sums.txt file." | tee -a $LOG
