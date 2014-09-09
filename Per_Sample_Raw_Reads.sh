@@ -66,13 +66,13 @@ if [ ! -f $MAP ] && [ ! -f $seqsfna ] && [ ! -f $READ1 ] && [ ! -f $READ2 ]; the
     echo '' | tee  -a $LOG
     exit 1
 else
-	MAP=$1
+    MAP=$1
     MD5MAP=`md5sum $1`
-	seqsfna=$2
-	MD5SEQS=`md5sum $2`
-	READ1=$3
+    seqsfna=$2
+    MD5SEQS=`md5sum $2`
+    READ1=$3
     MD5READ1=`md5sum $3`
-	READ2=$4
+    READ2=$4
     MD5READ2=`md5sum $4`
     echo '' | tee -a $LOG
     echo "Using $MAP as the input mapping file." | tee -a $LOG
@@ -89,9 +89,9 @@ fi
 
 # Check to see if GNU parallel is installed.
 if [ ! type parallel 2>/dev/null ]; then
-	SMP=TRUE
+    SMP=TRUE
 else
-	SMP=FALSE
+    SMP=FALSE
 fi
 
 # Unzip the input raw read files, won't affect them if they're already unzipped but will throw a non-lethal gzip error
@@ -100,10 +100,10 @@ TIME=`date +%H:%M`
 echo '' | tee -a $LOG
 echo "$DATE $TIME: Decompressing the input raw read files."
 if $SMP; then
-	gunzip $READ1
-	gunzip $READ2
+    gunzip $READ1
+    gunzip $READ2
 else
-	parallel gunzip ::: $READ1 $READ2
+    parallel gunzip ::: $READ1 $READ2
 fi
 
 # If the input files were gzipped, then we now need to capture the file name w/o the .gz extension
@@ -123,29 +123,29 @@ echo "$DATE $TIME: Proceeding to demultiplex the raw reads into per-sample R1 an
 
 while [ $line -lt $total ] 		                                   # While the current line number is less than the total number of sample lines, 
 do                             	                                   # Do the following actions
-	DATE=`date +%Y-%m-%d`                                         # Reset Date
-	TIME=`date +%H:%M`                                            # Reset Time
-	printf "$DATE $TIME   " | tee  -a $LOG                        # Print time stamp so user can track progress rate
-	printf "Sample: $line   " | tee  -a $LOG 	                   # First we'll print the current sample number
-	(( line++ )) 	                                              # Now we need to increase the line count to dissociate from the header line
-	sampleID=`sed -n "$line{p;q;}" $MAP2 | cut -f1,1`             # Now we find out what the sample ID is
-	names=$sampleID.txt                                           # Set an output file for the read names based on the sample ID
-	printf "$sampleID	" | tee  -a $LOG                           # Print what the name of the names file is for each sample
-	touch $names                                                  # Create the output file as empty
-	count=`grep -c $sampleID $seqsfna`                            # Check to see how many reads are in seqs.fna
-	echo "$count seqs" | tee  -a $LOG                             # Print out how many sequences are present for the sample
-	grep $sampleID $seqsfna | tr -d '>' | cut -d\  -f2,2 > $names # Compile the list of SeqIDs for filter_fasta command
-	RAW1=$sampleID"_R1.fastq"                                     # Define the Read1 output file
-	RAW2=$sampleID"_R2.fastq"                                     # Define the Read2 output file
-	filter_fasta.py -f $R1 -o $RAW1 -s $names                     # Create Read1 raw read file using QIIME
-	filter_fasta.py -f $R2 -o $RAW2 -s $names                     # Create Read2 raw read file using QIIME
-	if $SMP; then                                                 # Now we need to compress the files b/c thats what the SRA wants.
-		gzip $RAW1               
-		gzip $RAW2
-	else
-		parallel gzip ::: $RAW1 $RAW2
-	fi
-	rm $names                                                     # We no longer need the names file so let's get rid of it
+    DATE=`date +%Y-%m-%d`                                         # Reset Date
+    TIME=`date +%H:%M`                                            # Reset Time
+    printf "$DATE $TIME   " | tee  -a $LOG                        # Print time stamp so user can track progress rate
+    printf "Sample: $line   " | tee  -a $LOG 	                   # First we'll print the current sample number
+    (( line++ )) 	                                              # Now we need to increase the line count to dissociate from the header line
+    sampleID=`sed -n "$line{p;q;}" $MAP2 | cut -f1,1`             # Now we find out what the sample ID is
+    names=$sampleID.txt                                           # Set an output file for the read names based on the sample ID
+    printf "$sampleID	" | tee  -a $LOG                           # Print what the name of the names file is for each sample
+    touch $names                                                  # Create the output file as empty
+    count=`grep -c $sampleID $seqsfna`                            # Check to see how many reads are in seqs.fna
+    echo "$count seqs" | tee  -a $LOG                             # Print out how many sequences are present for the sample
+    grep $sampleID $seqsfna | tr -d '>' | cut -d\  -f2,2 > $names # Compile the list of SeqIDs for filter_fasta command
+    RAW1=$sampleID"_R1.fastq"                                     # Define the Read1 output file
+    RAW2=$sampleID"_R2.fastq"                                     # Define the Read2 output file
+    filter_fasta.py -f $R1 -o $RAW1 -s $names                     # Create Read1 raw read file using QIIME
+    filter_fasta.py -f $R2 -o $RAW2 -s $names                     # Create Read2 raw read file using QIIME
+    if $SMP; then                                                 # Now we need to compress the files b/c thats what the SRA wants.
+        gzip $RAW1               
+        gzip $RAW2
+    else
+        parallel gzip ::: $RAW1 $RAW2
+    fi
+    rm $names                                                     # We no longer need the names file so let's get rid of it
 done
 
 # Cleanup phase: step 1, re-zip the input files to again save file space and delete the "cleaned" map file.
@@ -155,10 +155,10 @@ echo '' | tee -a $LOG
 echo "$DATE $TIME: Recompressing the input raw read files."
 rm $MAP2
 if $SMP; then
-	gzip $R1
-	gzip $R2
+    gzip $R1
+    gzip $R2
 else
-	parallel gzip ::: $R1 $R2
+    parallel gzip ::: $R1 $R2
 fi
 
 # Step 2, calculate md5 checksums for all of the raw read files. These are needed for SRA submissions and also just nice to have.
