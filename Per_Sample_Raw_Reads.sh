@@ -1,17 +1,42 @@
 #!/bin/bash
 
+############################################################################################
+#
+# Per_sample_raw_reads.sh
+# 
+# Script for creating raw Read 1 and Read 2 files for each individual sample of a 16S 
+# This script take a users QIIME mapping file, the demultiplexed sequences file and the two raw read files as arguments.
+# A time-stamped log file of all steps that are conducted is created.
+# This file also shows input file MD5 checksums as well as MD5 checksums for all output files.
+#
+# Created by Michael C. Nelson on 2014-09-09.
+# Last revised: 2014-09-09
+# Revision #: 1
+# Copyright 2014 Michael C. Nelson and the University of Connecticut. All rights reserved.
+# 
+# This script is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+#
+############################################################################################
+
 ## pull in macqiime path
 source /macqiime/configs/bash_profile.txt
 
-# Define script variables
+# Define intitial variables
 DATE=`date +%Y-%m-%d`
 TIME=`date +%H:%M`
 TM=`date +%Y%m%d-%H%M`
-MAP=$1
-seqsfna=$2
-READ1=$3
-READ2=$4
 LOG=Log_$TM.txt
+MAP2=MAP_$TM.txt
 
 #Create log file
 echo "Script executed on $DATE at $TIME using the command call: Per_sample_raw_reads.sh $*" | tee $LOG
@@ -40,6 +65,26 @@ if [ ! -f $MAP ] && [ ! -f $seqsfna ] && [ ! -f $READ1 ] && [ ! -f $READ2 ]; the
     echo 'USAGE: Per_sample_raw_reads.sh Map.txt seqs.fna Undetermined_R1.fastq.gz Undetermined_R2.fastq.gz' | tee  -a $LOG
     echo '' | tee  -a $LOG
     exit 1
+else
+	MAP=$1
+    MD5MAP=`md5sum $1`
+	seqsfna=$2
+	MD5SEQS=`md5sum $2`
+	READ1=$3
+    MD5READ1=`md5sum $3`
+	READ2=$4
+    MD5READ2=`md5sum $4`
+    echo '' | tee -a $LOG
+    echo "Using $MAP as the input mapping file." | tee -a $LOG
+    echo $MD5MAP| tee -a $LOG
+	# Changing any carriage returns to newlines in the mapping file... so above is a slight lie
+	tr '\r' '\n' <$MAP>$MAP2
+    echo "Using $seqsfna as the input seqs.fna file." | tee -a $LOG
+    echo $MD5SEQS | tee -a $LOG
+    echo "Using $READ1 as the raw Read 1 file." | tee -a $LOG
+    echo $MD5READ1 | tee -a $LOG
+    echo "Using $READ2 as the raw Read 2 file." | tee -a $LOG
+    echo $MD5READ2 | tee -a $LOG
 fi
 
 # Check to see if GNU parallel is installed.
@@ -50,6 +95,10 @@ else
 fi
 
 # Unzip the input raw read files, won't affect them if they're already unzipped but will throw a non-lethal gzip error
+DATE=`date +%Y-%m-%d`                                         
+TIME=`date +%H:%M`                                            
+echo '' | tee -a $LOG
+echo "$DATE $TIME: Decompressing the input raw read files."
 if $SMP; then
 	gunzip $READ1
 	gunzip $READ2
@@ -57,14 +106,13 @@ else
 	parallel gunzip ::: $READ1 $READ2
 fi
 
+# If the input files were gzipped, then we now need to capture the file name w/o the .gz extension
 R1=`echo $READ1 | sed 's/.gz//'`
-#echo $R1
 R2=`echo $READ2 | sed 's/.gz//'`
-#echo $R2
 
 # Lets start actually doing something why don't we
 line=1                                                # We start with line 1
-total=`grep -c '^' $1`                                # Determine how many lines are actually in the file (safer than wc -l)
+total=`grep -c '^' $MAP2`                             # Determine how many lines are actually in the file (safer than wc -l if user doesn't have a final newline character)
 (( samples = $total - 1 ))                            # Total number of samples should be num lines minus header line
 echo '' | tee  -a $LOG
 echo "There are $samples samples in your mapfile." | tee  -a $LOG
@@ -77,10 +125,10 @@ while [ $line -lt $total ] 		                                   # While the curr
 do                             	                                   # Do the following actions
 	DATE=`date +%Y-%m-%d`                                         # Reset Date
 	TIME=`date +%H:%M`                                            # Reset Time
-	printf "$DATE $TIME   " | tee  -a $LOG                         # Print time stamp so user can track progress rate
+	printf "$DATE $TIME   " | tee  -a $LOG                        # Print time stamp so user can track progress rate
 	printf "Sample: $line   " | tee  -a $LOG 	                   # First we'll print the current sample number
 	(( line++ )) 	                                              # Now we need to increase the line count to dissociate from the header line
-	sampleID=`sed -n "$line{p;q;}" $MAP | cut -f1,1`              # Now we find out what the sample ID is
+	sampleID=`sed -n "$line{p;q;}" $MAP2 | cut -f1,1`             # Now we find out what the sample ID is
 	names=$sampleID.txt                                           # Set an output file for the read names based on the sample ID
 	printf "$sampleID	" | tee  -a $LOG                           # Print what the name of the names file is for each sample
 	touch $names                                                  # Create the output file as empty
@@ -89,8 +137,8 @@ do                             	                                   # Do the foll
 	grep $sampleID $seqsfna | tr -d '>' | cut -d\  -f2,2 > $names # Compile the list of SeqIDs for filter_fasta command
 	RAW1=$sampleID"_R1.fastq"                                     # Define the Read1 output file
 	RAW2=$sampleID"_R2.fastq"                                     # Define the Read2 output file
-	filter_fasta.py -f $R1 -o $RAW1 -s $names                     # Create Read1 raw read file
-	filter_fasta.py -f $R2 -o $RAW2 -s $names                     # Create Read2 raw read file
+	filter_fasta.py -f $R1 -o $RAW1 -s $names                     # Create Read1 raw read file using QIIME
+	filter_fasta.py -f $R2 -o $RAW2 -s $names                     # Create Read2 raw read file using QIIME
 	if $SMP; then                                                 # Now we need to compress the files b/c thats what the SRA wants.
 		gzip $RAW1               
 		gzip $RAW2
@@ -100,7 +148,12 @@ do                             	                                   # Do the foll
 	rm $names                                                     # We no longer need the names file so let's get rid of it
 done
 
-# Cleanup phase: step 1, re-zip the input files to again save file space
+# Cleanup phase: step 1, re-zip the input files to again save file space and delete the "cleaned" map file.
+DATE=`date +%Y-%m-%d`                                         
+TIME=`date +%H:%M`                                            
+echo '' | tee -a $LOG
+echo "$DATE $TIME: Recompressing the input raw read files."
+rm $MAP2
 if $SMP; then
 	gzip $R1
 	gzip $R2
@@ -109,7 +162,6 @@ else
 fi
 
 # Step 2, calculate md5 checksums for all of the raw read files. These are needed for SRA submissions and also just nice to have.
-echo '' | tee -a $LOG
 echo '' | tee -a $LOG
 DATE=`date +%Y-%m-%d`                                         
 TIME=`date +%H:%M`                                            
