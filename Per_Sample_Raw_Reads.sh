@@ -77,8 +77,8 @@ else
     echo '' | tee -a $LOG
     echo "Using $MAP as the input mapping file." | tee -a $LOG
     echo $MD5MAP| tee -a $LOG
-	# Changing any carriage returns to newlines in the mapping file... so above is a slight lie
-	tr '\r' '\n' <$MAP>$MAP2
+    # Changing any carriage returns to newlines in the mapping file... so above is a slight lie
+    tr '\r' '\n' <$MAP>$MAP2
     echo "Using $seqsfna as the input seqs.fna file." | tee -a $LOG
     echo $MD5SEQS | tee -a $LOG
     echo "Using $READ1 as the raw Read 1 file." | tee -a $LOG
@@ -112,7 +112,7 @@ R2=`echo $READ2 | sed 's/.gz//'`
 
 # Lets start actually doing something why don't we
 line=1                                                # We start with line 1
-total=`grep -c '^' $MAP2`                             # Determine how many lines are actually in the file (safer than wc -l if user doesn't have a final newline character)
+total=`grep -c '^' $MAP2`                             # Determine how many lines are actually in the file (safer than wc -l if map doesn't have a final newline character)
 (( samples = $total - 1 ))                            # Total number of samples should be num lines minus header line
 echo '' | tee  -a $LOG
 echo "There are $samples samples in your mapfile." | tee  -a $LOG
