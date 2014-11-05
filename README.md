@@ -1,4 +1,4 @@
 misc_scripts
 ============
 
-Collection of Random Scripts I've made to do certain things
+A collection of Random Scripts I've made to do certain things.

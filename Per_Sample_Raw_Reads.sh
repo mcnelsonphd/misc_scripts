@@ -12,8 +12,8 @@
 # TODO: Figure out a way to run the filter_fasta.py command on R1 and R2 in parallel to increase speed.
 #
 # Created by Michael C. Nelson on 2014-09-09.
-# Last revised: 2014-09-09
-# Revision #: 1
+# Last revised: 2014-09-12
+# Revision #: 2
 # Copyright 2014 Michael C. Nelson and the University of Connecticut. All rights reserved.
 # 
 # This script is free software: you can redistribute it and/or modify
@@ -132,11 +132,12 @@ do                             	                                   # Do the foll
     (( line++ )) 	                                              # Now we need to increase the line count to dissociate from the header line
     sampleID=`sed -n "$line{p;q;}" $MAP2 | cut -f1,1`             # Now we find out what the sample ID is
     names=$sampleID.txt                                           # Set an output file for the read names based on the sample ID
+    searchID=$sampleID\_
     printf "$sampleID	" | tee  -a $LOG                           # Print what the name of the names file is for each sample
     touch $names                                                  # Create the output file as empty
-    count=`grep -c $sampleID $seqsfna`                            # Check to see how many reads are in seqs.fna
+    count=`grep -c $searchID $seqsfna`                            # Check to see how many reads are in seqs.fna
     echo "$count seqs" | tee  -a $LOG                             # Print out how many sequences are present for the sample
-    grep $sampleID $seqsfna | tr -d '>' | cut -d\  -f2,2 > $names # Compile the list of SeqIDs for filter_fasta command
+    grep $searchID $seqsfna | tr -d '>' | cut -d\  -f2,2 > $names # Compile the list of SeqIDs for filter_fasta command
     RAW1=$sampleID"_R1.fastq"                                     # Define the Read1 output file
     RAW2=$sampleID"_R2.fastq"                                     # Define the Read2 output file
     filter_fasta.py -f $R1 -o $RAW1 -s $names                     # Create Read1 raw read file using QIIME
