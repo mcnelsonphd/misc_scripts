@@ -10,6 +10,7 @@
 # This file also shows input file MD5 checksums as well as MD5 checksums for all output files.
 #
 # TODO: Figure out a way to run the filter_fasta.py command on R1 and R2 in parallel to increase speed.
+#       This should be feasible with gnu parallel but should figure out how best to implement
 #
 # Created by Michael C. Nelson on 2014-09-09.
 # Last revised: 2014-09-12
@@ -90,10 +91,8 @@ else
 fi
 
 # Check to see if GNU parallel is installed.
-if [ ! type parallel 2>/dev/null ]; then
+if hash parallel 2>/dev/null; then
     SMP=TRUE
-else
-    SMP=FALSE
 fi
 
 # Unzip the input raw read files, won't affect them if they're already unzipped but will throw a non-lethal gzip error
@@ -101,11 +100,12 @@ DATE=`date +%Y-%m-%d`
 TIME=`date +%H:%M`                                            
 echo '' | tee -a $LOG
 echo "$DATE $TIME: Decompressing the input raw read files."
+
 if $SMP; then
+    parallel gunzip ::: $READ1 $READ2
+else
     gunzip $READ1
     gunzip $READ2
-else
-    parallel gunzip ::: $READ1 $READ2
 fi
 
 # If the input files were gzipped, then we now need to capture the file name w/o the .gz extension
@@ -113,9 +113,9 @@ R1=`echo $READ1 | sed 's/.gz//'`
 R2=`echo $READ2 | sed 's/.gz//'`
 
 # Lets start actually doing something why don't we
-line=1                                                # We start with line 1
-total=`grep -c '^' $MAP2`                             # Determine how many lines are actually in the file (safer than wc -l if map doesn't have a final newline character)
-(( samples = $total - 1 ))                            # Total number of samples should be num lines minus header line
+line=1                                 # We start with line 1
+total=`grep -c '^' $MAP2`              # Determine how many lines are actually in the file (safer than wc -l if map doesn't have a final newline character)
+(( samples = $total - 1 ))             # Total number of samples should be num lines minus header line
 echo '' | tee  -a $LOG
 echo "There are $samples samples in your mapfile." | tee  -a $LOG
 echo '' | tee  -a $LOG
@@ -123,17 +123,17 @@ DATE=`date +%Y-%m-%d`
 TIME=`date +%H:%M`                                            
 echo "$DATE $TIME: Proceeding to demultiplex the raw reads into per-sample R1 and R2 files." | tee  -a $LOG
 
-while [ $line -lt $total ] 		                                   # While the current line number is less than the total number of sample lines, 
-do                             	                                   # Do the following actions
+while [ $line -lt $total ] 		                                  # While the current line number is less than the total number of sample lines,
+do                             	                                  # Do the following actions
     DATE=`date +%Y-%m-%d`                                         # Reset Date
     TIME=`date +%H:%M`                                            # Reset Time
     printf "$DATE $TIME   " | tee  -a $LOG                        # Print time stamp so user can track progress rate
-    printf "Sample: $line   " | tee  -a $LOG 	                   # First we'll print the current sample number
+    printf "Sample: $line   " | tee  -a $LOG 	                  # First we'll print the current sample number
     (( line++ )) 	                                              # Now we need to increase the line count to dissociate from the header line
     sampleID=`sed -n "$line{p;q;}" $MAP2 | cut -f1,1`             # Now we find out what the sample ID is
     names=$sampleID.txt                                           # Set an output file for the read names based on the sample ID
     searchID=$sampleID\_
-    printf "$sampleID	" | tee  -a $LOG                           # Print what the name of the names file is for each sample
+    printf "$sampleID	" | tee  -a $LOG                          # Print what the name of the names file is for each sample
     touch $names                                                  # Create the output file as empty
     count=`grep -c $searchID $seqsfna`                            # Check to see how many reads are in seqs.fna
     echo "$count seqs" | tee  -a $LOG                             # Print out how many sequences are present for the sample
@@ -143,10 +143,10 @@ do                             	                                   # Do the foll
     filter_fasta.py -f $R1 -o $RAW1 -s $names                     # Create Read1 raw read file using QIIME
     filter_fasta.py -f $R2 -o $RAW2 -s $names                     # Create Read2 raw read file using QIIME
     if $SMP; then                                                 # Now we need to compress the files b/c thats what the SRA wants.
-        gzip $RAW1               
-        gzip $RAW2
-    else
         parallel gzip ::: $RAW1 $RAW2
+    else
+        gzip $RAW1
+        gzip $RAW2
     fi
     rm $names                                                     # We no longer need the names file so let's get rid of it
 done
@@ -157,11 +157,12 @@ TIME=`date +%H:%M`
 echo '' | tee -a $LOG
 echo "$DATE $TIME: Recompressing the input raw read files."
 rm $MAP2
+
 if $SMP; then
+    parallel gzip ::: $R1 $R2
+else
     gzip $R1
     gzip $R2
-else
-    parallel gzip ::: $R1 $R2
 fi
 
 # Step 2, calculate md5 checksums for all of the raw read files. These are needed for SRA submissions and also just nice to have.
@@ -169,8 +170,9 @@ echo '' | tee -a $LOG
 DATE=`date +%Y-%m-%d`                                         
 TIME=`date +%H:%M`                                            
 echo "$DATE $TIME: Calculating md5 checksum values for all sample files." | tee -a $LOG
-md5sum *_R1.fastq.gz | tee -a $LOG | tee md5sums.txt
-md5sum *_R2.fastq.gz | tee -a $LOG | tee -a md5sums.txt
+md5sum *_R1.fastq.gz | tee -a $LOG | tee md5sums.txt     # This could be done in parallel, but, eh.
+md5sum *_R2.fastq.gz | tee -a $LOG | tee -a md5sums.txt  # Note that if the files are decompressed and then recompressed using a different method
+                                                         # (e.g. pigz) then the MD5 values will change.
 
 DATE=`date +%Y-%m-%d`                                         
 TIME=`date +%H:%M`                                            
