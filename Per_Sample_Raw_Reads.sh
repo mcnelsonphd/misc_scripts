@@ -143,7 +143,7 @@ do                             	                                  # Do the follo
     RAW2=$sampleID"_R2.fastq"                                     # Define the Read2 output file
     if $SMP; then
         cp $names $names2
-        parallel -N3 echo filter_fastq.py -f {1} -o {2} -s {3} ::: $R1 $RAW1 $names $R2 $RAW $names2
+        parallel -N3 filter_fasta.py -f {1} -o {2} -s {3} ::: $R1 $RAW1 $names $R2 $RAW $names2
     else
         filter_fasta.py -f $R1 -o $RAW1 -s $names                     # Create Read1 raw read file using QIIME
         filter_fasta.py -f $R2 -o $RAW2 -s $names                     # Create Read2 raw read file using QIIME
