@@ -15,7 +15,7 @@
 #
 # Created by Michael C. Nelson on 2014-09-09.
 # Last revised: 2015-03-23
-# Revision #: 4
+# Revision #: 5
 # Copyright 2014 Michael C. Nelson and the University of Connecticut. All rights reserved.
 # 
 # This script is free software: you can redistribute it and/or modify
@@ -145,12 +145,6 @@ do                             	                                  # Do the follo
     else
         fastq_filter.py -f $R1 -o $RAW1 -s $names                     # Create Read1 raw read file using QIIME
         fastq_filter.py -f $R2 -o $RAW2 -s $names                     # Create Read2 raw read file using QIIME
-    fi
-    if $SMP; then                                                 # Now we need to compress the files b/c thats what the SRA wants.
-        parallel gzip ::: $RAW1 $RAW2
-    else
-        gzip $RAW1
-        gzip $RAW2
     fi
     rm $names                                                     # We no longer need the names file so let's get rid of it
 done
