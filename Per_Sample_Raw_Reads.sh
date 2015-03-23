@@ -9,12 +9,13 @@
 # A time-stamped log file of all steps that are conducted is created.
 # This file also shows input file MD5 checksums as well as MD5 checksums for all output files.
 #
-# TODO: Figure out a way to run the filter_fasta.py command on R1 and R2 in parallel to increase speed.
-#       This should be feasible with gnu parallel but should figure out how best to implement
+# TODO: Figure out a better way to filter in parallel, prob best done w/in the fastq_filter.py script.
+#       Incorporate command line arguments using getopt flags instead of placement.
+#       Allow for optional output directory to be specified instead of CWD.
 #
 # Created by Michael C. Nelson on 2014-09-09.
-# Last revised: 2014-09-12
-# Revision #: 2
+# Last revised: 2015-03-23
+# Revision #: 4
 # Copyright 2014 Michael C. Nelson and the University of Connecticut. All rights reserved.
 # 
 # This script is free software: you can redistribute it and/or modify
@@ -30,9 +31,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 #
 ############################################################################################
-
-## pull in macqiime path
-source /macqiime/configs/bash_profile.txt
 
 # Define intitial variables
 DATE=`date +%Y-%m-%d`
@@ -143,10 +141,10 @@ do                             	                                  # Do the follo
     RAW2=$sampleID"_R2.fastq"                                     # Define the Read2 output file
     if $SMP; then
         cp $names $names2
-        parallel -N3 filter_fasta.py -f {1} -o {2} -s {3} ::: $R1 $RAW1 $names $R2 $RAW $names2
+        parallel -N3 fastq_filter.py -f {1} -o {2} -s {3} ::: $R1 $RAW1 $names $R2 $RAW $names2
     else
-        filter_fasta.py -f $R1 -o $RAW1 -s $names                     # Create Read1 raw read file using QIIME
-        filter_fasta.py -f $R2 -o $RAW2 -s $names                     # Create Read2 raw read file using QIIME
+        fastq_filter.py -f $R1 -o $RAW1 -s $names                     # Create Read1 raw read file using QIIME
+        fastq_filter.py -f $R2 -o $RAW2 -s $names                     # Create Read2 raw read file using QIIME
     fi
     if $SMP; then                                                 # Now we need to compress the files b/c thats what the SRA wants.
         parallel gzip ::: $RAW1 $RAW2
