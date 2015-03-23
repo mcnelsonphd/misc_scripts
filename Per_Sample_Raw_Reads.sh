@@ -137,14 +137,14 @@ do                             	                                  # Do the follo
     count=`grep -c $searchID $seqsfna`                            # Check to see how many reads are in seqs.fna
     echo "$count seqs" | tee  -a $LOG                             # Print out how many sequences are present for the sample
     grep $searchID $seqsfna | tr -d '>' | cut -d\  -f2,2 > $names # Compile the list of SeqIDs for filter_fasta command
-    RAW1=$sampleID"_R1.fastq.gz"                                     # Define the Read1 output file
-    RAW2=$sampleID"_R2.fastq.gz"                                     # Define the Read2 output file
+    RAW1=$sampleID"_R1.fastq.gz"                                  # Define the Read1 output file
+    RAW2=$sampleID"_R2.fastq.gz"                                  # Define the Read2 output file
     if $SMP; then
         cp $names $names2
-        parallel -N3 ./fastq_filter.py -i {1} -o {2} -n {3} ::: $R1 $RAW1 $names $R2 $RAW2 $names2
+        parallel -N3 fastq_filter.py -i {1} -o {2} -n {3} ::: $R1 $RAW1 $names $R2 $RAW2 $names2
     else
-        ./fastq_filter.py -i $R1 -o $RAW1 -n $names                     # Create Read1 raw read file using QIIME
-        ./fastq_filter.py -i $R2 -o $RAW2 -n $names                     # Create Read2 raw read file using QIIME
+        fastq_filter.py -i $R1 -o $RAW1 -n $names                 # Create Read1 raw read file using QIIME
+        fastq_filter.py -i $R2 -o $RAW2 -n $names                 # Create Read2 raw read file using QIIME
     fi
     rm $names $names2                                             # We no longer need the names file so let's get rid of it
 done
