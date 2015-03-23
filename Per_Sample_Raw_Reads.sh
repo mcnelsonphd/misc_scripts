@@ -15,7 +15,7 @@
 #
 # Created by Michael C. Nelson on 2014-09-09.
 # Last revised: 2015-03-23
-# Revision #: 5
+# Revision #: 6
 # Copyright 2014 Michael C. Nelson and the University of Connecticut. All rights reserved.
 # 
 # This script is free software: you can redistribute it and/or modify
@@ -130,23 +130,23 @@ do                             	                                  # Do the follo
     (( line++ )) 	                                              # Now we need to increase the line count to dissociate from the header line
     sampleID=`sed -n "$line{p;q;}" $MAP2 | cut -f1,1`             # Now we find out what the sample ID is
     names=$sampleID.txt                                           # Set an output file for the read names based on the sample ID
-    names2=$sampleID2.txt                                         # Create name of second names folder in case we're running in parallel mode
+    names2=$sampleID'2.txt'                                       # Create name of second names folder in case we're running in parallel mode
     searchID=$sampleID\_
     printf "$sampleID	" | tee  -a $LOG                          # Print what the name of the names file is for each sample
     touch $names                                                  # Create the output file as empty
     count=`grep -c $searchID $seqsfna`                            # Check to see how many reads are in seqs.fna
     echo "$count seqs" | tee  -a $LOG                             # Print out how many sequences are present for the sample
     grep $searchID $seqsfna | tr -d '>' | cut -d\  -f2,2 > $names # Compile the list of SeqIDs for filter_fasta command
-    RAW1=$sampleID"_R1.fastq"                                     # Define the Read1 output file
-    RAW2=$sampleID"_R2.fastq"                                     # Define the Read2 output file
+    RAW1=$sampleID"_R1.fastq.gz"                                     # Define the Read1 output file
+    RAW2=$sampleID"_R2.fastq.gz"                                     # Define the Read2 output file
     if $SMP; then
         cp $names $names2
-        parallel -N3 fastq_filter.py -f {1} -o {2} -s {3} ::: $R1 $RAW1 $names $R2 $RAW $names2
+        parallel -N3 ./fastq_filter.py -i {1} -o {2} -n {3} ::: $R1 $RAW1 $names $R2 $RAW2 $names2
     else
-        fastq_filter.py -f $R1 -o $RAW1 -s $names                     # Create Read1 raw read file using QIIME
-        fastq_filter.py -f $R2 -o $RAW2 -s $names                     # Create Read2 raw read file using QIIME
+        ./fastq_filter.py -i $R1 -o $RAW1 -n $names                     # Create Read1 raw read file using QIIME
+        ./fastq_filter.py -i $R2 -o $RAW2 -n $names                     # Create Read2 raw read file using QIIME
     fi
-    rm $names                                                     # We no longer need the names file so let's get rid of it
+    rm $names $names2                                             # We no longer need the names file so let's get rid of it
 done
 
 # Cleanup phase: step 1, re-zip the input files to again save file space and delete the "cleaned" map file.
