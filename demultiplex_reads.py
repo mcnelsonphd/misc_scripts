@@ -11,14 +11,20 @@ __credits__ = ["Created using code lifted from the QIIME project (www.qiime.org)
 Demultiplex paired reads for sample MyGenome having index N701 for one MiSeq run and write results to directory GenomeA/,
 demultiplex_reads.py -f Undetermined_read1.fastq.gz -r Undetermined_read2.fastq.gz -b Undetermined_I1.fastq.gz -o GenomeA/ -i N701 -n MyGenome
 """
-
-from os import rename, makedirs
-from os.path import isdir, exists
 import argparse
 import gzip
+import sys
+from os import rename, makedirs
+from os.path import isdir, exists
 from itertools import izip
 
-parser = argparse.ArgumentParser()
+class MyParser(argparse.ArgumentParser):
+    def error(self, message):
+        sys.stderr.write('error: %s\n' % message)
+        self.print_help()
+        sys.exit(2)
+
+parser = MyParser()
 parser.add_argument('-f', '--fwd_reads', required=True, help="The Read 1 fastq file to search through. [REQUIRED]", metavar='Undetermined_R1.fastq.gz')
 parser.add_argument('-r', '--rev_reads', required=True, help="The Read 2 fastq file to search through. [REQUIRED]", metavar='Undetermined_R2.fastq.gz')
 parser.add_argument('-b', '--index_reads', required=True, help="The index fastq file to search against. [REQUIRED]", metavar='Undetermined_I1.fastq.gz')
@@ -27,12 +33,7 @@ parser.add_argument('-i', '--index_name', required=True, help="The Illumina name
 parser.add_argument('-n', '--sample_id', required=True, help="Sample ID that should be used to name the output files. [REQUIRED]", metavar='MyGenome')
 
 # Defining a dict of the Illumina index sequences
-Indices = {'N701': 'TCGCCTTA', 'N702': 'CTAGTACG', 'N703': 'TTCTGCCT', 'N704': 'GCTCAGGA', 'N705': 'AGGAGTCC', 'N706': 'CATGCCTA',
-           'N707': 'GTAGAGAG', 'N708': 'CCTCTCTG', 'N709': 'AGCGTAGC', 'N710': 'CAGCCTCG', 'N711': 'TGCCTCTT', 'N712': 'TCCTCTAC',
-           'AD001':'ATCACG', 'AD002':'CGATGT', 'AD003':'TTAGGC', 'AD004':'TGACCA', 'AD005':'ACAGTG', 'AD006':'GCCAAT', 'AD007':'CAGATC',
-           'AD008':'ACTTGA', 'AD009':'GATCAA', 'AD010':'TAGCTT', 'AD011':'GGCTAC', 'AD012':'CTTGTA', 'AD013':'AGTCAA', 'AD014':'AGTTCC',
-           'AD015':'ATGTCA', 'AD016':'CCGTCC', 'AD018':'GTCCGC', 'AD019':'GTGAAA', 'AD020':'GTGGCC', 'AD021':'GTTTCG', 'AD022':'CGTACG',
-           'AD023':'GAGTGG', 'AD025':'ACTGAT', 'AD027':'ATTCCT'}
+Indices = {'N701': 'TAAGGCGA', 'N702': 'CGTACTAG', 'N703': 'AGGCAGAA', 'N704': 'TCCTGAGC', 'N705': 'GGACTCCT', 'N706': 'TAGGCATG', 'N707': 'CTCTCTAC', 'N708': 'CAGAGAGG', 'N709': 'GCTACGCT', 'N710': 'CGAGGCTG', 'N711': 'AAGAGGCA', 'N712': 'GTAGAGGA', 'AD001': 'ATCACG', 'AD002': 'CGATGT', 'AD003': 'TTAGGC', 'AD004': 'TGACCA', 'AD005': 'ACAGTG', 'AD006': 'GCCAAT', 'AD007': 'CAGATC', 'AD008': 'ACTTGA', 'AD009': 'GATCAG', 'AD010': 'TAGCTT', 'AD011': 'GGCTAC', 'AD012': 'CTTGTA', 'AD013': 'AGTCAA', 'AD014': 'AGTTCC'}
 
 class ParseError(Exception):
     pass
