@@ -1,9 +1,11 @@
-#!/usr/bin/env python27
+#!/usr/bin/env python2.7
 __author__ = 'Michael C. Nelson'
+__copyright__ = "Copyright 2015, Michael C. Nelson/University of Connecticut"
 __license__ = 'GPL3'
 __version__ = '1'
 __creationdate__ = '2015-03-23'
 __lastmoddate__ = '2015-03-36'
+__credits__ = ["Created using code lifted from the QIIME project (www.qiime.org)."]
 
 """
 Demultiplex paired reads for sample MyGenome having index N701 for one MiSeq run and write results to directory GenomeA/,
@@ -24,8 +26,13 @@ parser.add_argument('-o', '--output_dir', required=True, help="The output direct
 parser.add_argument('-i', '--index_name', required=True, help="The Illumina name of the index sequence. [REQUIRED]", metavar='Names.txt')
 parser.add_argument('-n', '--sample_id', required=True, help="Sample ID that should be used to name the output files. [REQUIRED]", metavar='MyGenome')
 
-# Defining a dict of the Illumina NexteraXT index sequences
-Indices = {'N701': 'TCGCCTTA', 'N702': 'CTAGTACG', 'N703': 'TTCTGCCT', 'N704': 'GCTCAGGA', 'N705': 'AGGAGTCC', 'N706': 'CATGCCTA', 'N707': 'GTAGAGAG', 'N708': 'CCTCTCTG', 'N709': 'AGCGTAGC', 'N710': 'CAGCCTCG', 'N711': 'TGCCTCTT', 'N712': 'TCCTCTAC'}
+# Defining a dict of the Illumina index sequences
+Indices = {'N701': 'TCGCCTTA', 'N702': 'CTAGTACG', 'N703': 'TTCTGCCT', 'N704': 'GCTCAGGA', 'N705': 'AGGAGTCC', 'N706': 'CATGCCTA',
+           'N707': 'GTAGAGAG', 'N708': 'CCTCTCTG', 'N709': 'AGCGTAGC', 'N710': 'CAGCCTCG', 'N711': 'TGCCTCTT', 'N712': 'TCCTCTAC',
+           'AD001':'ATCACG', 'AD002':'CGATGT', 'AD003':'TTAGGC', 'AD004':'TGACCA', 'AD005':'ACAGTG', 'AD006':'GCCAAT', 'AD007':'CAGATC',
+           'AD008':'ACTTGA', 'AD009':'GATCAA', 'AD010':'TAGCTT', 'AD011':'GGCTAC', 'AD012':'CTTGTA', 'AD013':'AGTCAA', 'AD014':'AGTTCC',
+           'AD015':'ATGTCA', 'AD016':'CCGTCC', 'AD018':'GTCCGC', 'AD019':'GTGAAA', 'AD020':'GTGGCC', 'AD021':'GTTTCG', 'AD022':'CGTACG',
+           'AD023':'GAGTGG', 'AD025':'ACTGAT', 'AD027':'ATTCCT'}
 
 class ParseError(Exception):
     pass
@@ -217,5 +224,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
