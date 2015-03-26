@@ -9,7 +9,7 @@
 # A time-stamped log file of all steps that are conducted is created.
 # This file also shows input file MD5 checksums as well as MD5 checksums for all output files.
 #
-# TODO: Figure out a better way to filter in parallel, prob best done w/in the fastq_filter.py script.
+# TODO: Figure out a better way to filter in parallel, prob best done w/in the fastq_filter.py script to remove gnu parallel dependency.
 #       Incorporate command line arguments using getopt flags instead of placement.
 #       Allow for optional output directory to be specified instead of CWD.
 #
