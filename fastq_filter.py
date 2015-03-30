@@ -10,17 +10,10 @@ import argparse
 import gzip
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", '--input', required=True, help="The input fastq file to search through. [REQUIRED]", metavar='Input.fastq')
+parser.add_argument('-i', '--input', required=True, help="The input fastq file to search through. [REQUIRED]", metavar='Input.fastq')
 parser.add_argument('-o', '--output', required=True, help="The output fastq to create. [REQUIRED]", metavar='Output.fastq.gz')
 parser.add_argument('-n', '--names', required=True, help="The file containing the read IDs to search for. [REQUIRED]", metavar='Names.txt')
 args = parser.parse_args()
-
-INFILE = args.input
-OUTFILE = args.output
-if OUTFILE.endswith('.fastq'):
-   print "Warning: Output files are automatically gzip compressed, adding correct extension to output file name. "
-   OUTFILE += '.gz'
-NAMES = args.names
 
 def get_ids(names_file):
     return set([l.split()[0].strip() for l in names_file if not l.startswith('#') and l])
@@ -56,15 +49,18 @@ def filter_fastq(input, output, seqs_to_keep):
 
 
 def main():
+    INFILE = args.input
+    OUTFILE = args.output
+    if OUTFILE.endswith('.fastq'):
+        print "Warning: Output files are automatically gzip compressed, adding correct extension to output file name."
+        OUTFILE += '.gz'
+    NAMES = args.names
     keep_IDs = get_ids(open(NAMES, 'U')) # Creates a dictionary of seqIDs for seqs we want to keep
 
     if INFILE.endswith('.fastq'):
         filter_fastq(INFILE, OUTFILE, keep_IDs)
     elif INFILE.endswith('.fastq.gz'):
-        filter_fastq(INFILE, OUTFILE, keep_IDs)
-    else:
         print "ERROR: Input file must be a non-compressed fastq file with the extension .fastq"
-
 
 if __name__ == "__main__":
     main()
