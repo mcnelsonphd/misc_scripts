@@ -137,17 +137,7 @@ def parse_paired_reads(fastq_read1_f, fastq_read2_f, fastq_barcode_f, index, log
     quality_index = 2
     sample_seq_count = 0
 
-    # Not sure what the hell this is supposed to do.
-    ##QIIME: grab the first lines and then seek back to the beginning of the file
-    #try:
-    #    fastq_read_f_line1 = fastq_read_f.readline()
-    #    fastq_read_f_line2 = fastq_read_f.readline()
-    #    fastq_read_f.seek(0)
-    #except AttributeError:
-    #    fastq_read_f_line1 = fastq_read_f[0]
-    #    fastq_read_f_line2 = fastq_read_f[1]
-
-    barcode_length = len(index) # Setting to 8 but should get length of barcode form the dict of index sequences
+    barcode_length = len(index) # Setting length of barcode form the dict of index sequences
 
     # prep data for logging
     input_sequence_count = 0    # Keep track of how many sequences we're reading in
@@ -166,7 +156,7 @@ def parse_paired_reads(fastq_read1_f, fastq_read2_f, fastq_barcode_f, index, log
             quality1 = read1_data[quality_index]               # Grab the read1 quality string
             quality2 = read2_data[quality_index]               # Grab the read2 quality string
             if barcode == index:
-                # Returns a generator so as it's processing data it can be immediately passed back to calling function for further processing, saving memory space.
+                # Returns a generator of the sequence data.
                 yield header1, sequence1, quality1, header2, sequence2, quality2
                 sample_seq_count +=1
 
@@ -207,11 +197,10 @@ def main():
     else:
         barcode_read_f = open(index_read_fp,'U')
 
-    # What the function should look like is:
-    #seq_generator = parse_paired_reads(fwd_read_f, rev_read_f, barcode_read_f, barcode_to_sample_id, log_f)
+    # Parse reads and return to a generator expression to reduce memory footprint:
     seq_generator = parse_paired_reads(fwd_read_f, rev_read_f, barcode_read_f, barcode, log_f)
 
-    # This only writes output for one file, need to reconfig for two
+    # Write the parsed data to both output files
     for header_f, sequence_f, quality_f, header_r, sequence_r, quality_r in seq_generator:
         output_r1_f.write('@%s\n%s\n+\n%s\n' % (header_f, sequence_f, quality_f)) # This will write out fastq output
         output_r2_f.write('@%s\n%s\n+\n%s\n' % (header_r, sequence_r, quality_r)) # This will write out fastq output
