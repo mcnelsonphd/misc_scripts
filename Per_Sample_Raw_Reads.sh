@@ -58,7 +58,7 @@ elif [ "$(($# % 4))" != 0 ]; then
     exit 1
 fi
 
-# Are the require input files in the current dir?
+# Can the required input files be found?
 if [ ! -f $MAP ] && [ ! -f $seqsfna ] && [ ! -f $READ1 ] && [ ! -f $READ2 ]; then
     echo '' | tee  -a $LOG
     echo 'ERROR: Required input files could not be found.' | tee  -a $LOG
@@ -93,24 +93,7 @@ if hash parallel 2>/dev/null; then
     SMP=TRUE
 fi
 
-# Unzip the input raw read files, won't affect them if they're already unzipped but will throw a non-lethal gzip error
-DATE=`date +%Y-%m-%d`                                         
-TIME=`date +%H:%M`                                            
-echo '' | tee -a $LOG
-echo "$DATE $TIME: Decompressing the input raw read files."
-
-if $SMP; then
-    parallel gunzip ::: $READ1 $READ2
-else
-    gunzip $READ1
-    gunzip $READ2
-fi
-
-# If the input files were gzipped, then we now need to capture the file name w/o the .gz extension
-R1=`echo $READ1 | sed 's/.gz//'`
-R2=`echo $READ2 | sed 's/.gz//'`
-
-# Lets start actually doing something why don't we
+# Step 1: Parse out the raw read files for each sample
 line=1                                 # We start with line 1
 total=`grep -c '^' $MAP2`              # Determine how many lines are actually in the file (safer than wc -l if map doesn't have a final newline character)
 (( samples = $total - 1 ))             # Total number of samples should be num lines minus header line
@@ -121,47 +104,35 @@ DATE=`date +%Y-%m-%d`
 TIME=`date +%H:%M`                                            
 echo "$DATE $TIME: Proceeding to demultiplex the raw reads into per-sample R1 and R2 files." | tee  -a $LOG
 
-while [ $line -lt $total ] 		                                  # While the current line number is less than the total number of sample lines,
-do                             	                                  # Do the following actions
-    DATE=`date +%Y-%m-%d`                                         # Reset Date
-    TIME=`date +%H:%M`                                            # Reset Time
-    printf "$DATE $TIME   " | tee  -a $LOG                        # Print time stamp so user can track progress rate
-    printf "Sample: $line   " | tee  -a $LOG 	                  # First we'll print the current sample number
-    (( line++ )) 	                                              # Now we need to increase the line count to dissociate from the header line
-    sampleID=`sed -n "$line{p;q;}" $MAP2 | cut -f1,1`             # Now we find out what the sample ID is
-    names=$sampleID.txt                                           # Set an output file for the read names based on the sample ID
-    names2=$sampleID'2.txt'                                       # Create name of second names folder in case we're running in parallel mode
-    searchID=$sampleID\_
-    printf "$sampleID	" | tee  -a $LOG                          # Print what the name of the names file is for each sample
-    touch $names                                                  # Create the output file as empty
-    count=`grep -c $searchID $seqsfna`                            # Check to see how many reads are in seqs.fna
-    echo "$count seqs" | tee  -a $LOG                             # Print out how many sequences are present for the sample
-    grep $searchID $seqsfna | tr -d '>' | cut -d\  -f2,2 > $names # Compile the list of SeqIDs for filter_fasta command
-    RAW1=$sampleID"_R1.fastq.gz"                                  # Define the Read1 output file
-    RAW2=$sampleID"_R2.fastq.gz"                                  # Define the Read2 output file
-    if $SMP; then
-        cp $names $names2
-        parallel -N3 fastq_filter.py -i {1} -o {2} -n {3} ::: $R1 $RAW1 $names $R2 $RAW2 $names2
-    else
-        fastq_filter.py -i $R1 -o $RAW1 -n $names                 # Create Read1 raw read file using QIIME
-        fastq_filter.py -i $R2 -o $RAW2 -n $names                 # Create Read2 raw read file using QIIME
-    fi
-    rm $names $names2                                             # We no longer need the names file so let's get rid of it
+while [ $line -lt $total ] 		                                   # While the current line number is less than the total number of sample lines,
+do                             	                                   # Do the following actions
+    DATE=`date +%Y-%m-%d`                                          # Reset Date
+    TIME=`date +%H:%M`                                             # Reset Time
+    printf "$DATE $TIME   " | tee  -a $LOG                         # Print time stamp so user can track progress rate
+    printf "Sample: $line   " | tee  -a $LOG 	                   # First we'll print the current sample number
+    (( line++ )) 	                                               # Now we need to increase the line count to dissociate from the header line
+    sampleID=`sed -n "$line{p;q;}" $MAP2 | cut -f1,1`              # Now we find out what the sample ID is
+    names=$sampleID.txt                                            # Set an output file for the read names based on the sample ID
+    names2=$sampleID'2.txt'                                        # Create name of second names file in case we're running in parallel mode
+    searchID=$sampleID\_                                           # Set the search pattern, which is the sample ID
+    printf "$sampleID	" | tee  -a $LOG                           # Print what the name of the names file is for each sample
+    touch $names                                                   # Create the output file as empty
+    count=`grep -c $searchID $seqsfna`                             # Check to see how many reads are in seqs.fna
+    echo "$count seqs" | tee  -a $LOG                              # Print out how many sequences are present for the sample
+    grep $searchID $seqsfna | tr -d '>' | cut -d\  -f2,2 > $names  # Compile the list of SeqIDs for dual_fastq_filter command
+    RAW1=$sampleID"_R1.fastq.gz"                                   # Define the Read1 output file
+    RAW2=$sampleID"_R2.fastq.gz"                                   # Define the Read2 output file
+    dual_fastq_filter.py -f $R1 -r $R2 -o $RAW1 -p $RAW2 -n $names # Filter out the raw read1/read2 to gzipped files
+    rm $names                                                      # We no longer need the names file so let's get rid of it
 done
 
 # Cleanup phase: step 1, re-zip the input files to again save file space and delete the "cleaned" map file.
 DATE=`date +%Y-%m-%d`                                         
 TIME=`date +%H:%M`                                            
 echo '' | tee -a $LOG
-echo "$DATE $TIME: Recompressing the input raw read files."
+echo "$DATE $TIME: Finished parsing out the raw Read1/Read2 files for each sample."
 rm $MAP2
 
-if $SMP; then
-    parallel gzip ::: $R1 $R2
-else
-    gzip $R1
-    gzip $R2
-fi
 
 # Step 2, calculate md5 checksums for all of the raw read files. These are needed for SRA submissions and also just nice to have.
 echo '' | tee -a $LOG
