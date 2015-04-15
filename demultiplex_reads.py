@@ -29,7 +29,7 @@ parser.add_argument('-f', '--fwd_reads', required=True, help="The Read 1 fastq f
 parser.add_argument('-r', '--rev_reads', required=True, help="The Read 2 fastq file to search through. [REQUIRED]", metavar='Undetermined_R2.fastq.gz')
 parser.add_argument('-b', '--index_reads', required=True, help="The index fastq file to search against. [REQUIRED]", metavar='Undetermined_I1.fastq.gz')
 parser.add_argument('-o', '--output_dir', required=True, help="The output directory to create. [REQUIRED]", metavar='MyGenome_reads')
-parser.add_argument('-i', '--index_name', required=True, help="The Illumina name of the index sequence. [REQUIRED]", metavar='Names.txt')
+parser.add_argument('-i', '--index_name', required=True, help="The Illumina name of the index sequence. [REQUIRED]", metavar='N701')
 parser.add_argument('-n', '--sample_id', required=True, help="Sample ID that should be used to name the output files. [REQUIRED]", metavar='MyGenome')
 
 # Defining a dict of the Illumina index sequences
