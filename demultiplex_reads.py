@@ -28,9 +28,16 @@ parser = MyParser()
 parser.add_argument('-f', '--fwd_reads', required=True, help="The Read 1 fastq file to search through. [REQUIRED]", metavar='Undetermined_R1.fastq.gz')
 parser.add_argument('-r', '--rev_reads', required=True, help="The Read 2 fastq file to search through. [REQUIRED]", metavar='Undetermined_R2.fastq.gz')
 parser.add_argument('-b', '--index_reads', required=True, help="The index fastq file to search against. [REQUIRED]", metavar='Undetermined_I1.fastq.gz')
+<<<<<<< HEAD
+parser.add_argument('-o', '--output_dir', required=True, help="The output directory to use, creating if not already present. [REQUIRED]", metavar='MyGenome_reads')
+parser.add_argument('-i', '--index_name', required=True, help="The Illumina name of the index sequence. [REQUIRED]", metavar='Names.txt')
+=======
+>>>>>>> FETCH_HEAD
 parser.add_argument('-o', '--output_dir', required=True, help="The output directory to create. [REQUIRED]", metavar='MyGenome_reads')
 parser.add_argument('-i', '--index_name', required=True, help="The Illumina name of the index sequence. [REQUIRED]", metavar='N701')
 parser.add_argument('-n', '--sample_id', required=True, help="Sample ID that should be used to name the output files. [REQUIRED]", metavar='MyGenome')
+parser.add_argument('-c', '--custom_index', required=False, help="The sequence of a custom index primer not that is not part of the standard Illumina set.", metavar='ATCGATCG')
+parser.add_argument('-l', '--list_indices', required=False, help="Print the built-in dictionary of Illumina indices.")
 
 # Defining a dict of the Illumina index sequences
 Indices = {'N701': 'TAAGGCGA', 'N702': 'CGTACTAG', 'N703': 'AGGCAGAA', 'N704': 'TCCTGAGC', 'N705': 'GGACTCCT', 'N706': 'TAGGCATG', 'N707': 'CTCTCTAC', 'N708': 'CAGAGAGG', 'N709': 'GCTACGCT', 'N710': 'CGAGGCTG', 'N711': 'AAGAGGCA', 'N712': 'GTAGAGGA', 'AD001': 'ATCACG', 'AD002': 'CGATGT', 'AD003': 'TTAGGC', 'AD004': 'TGACCA', 'AD005': 'ACAGTG', 'AD006': 'GCCAAT', 'AD007': 'CAGATC', 'AD008': 'ACTTGA', 'AD009': 'GATCAG', 'AD010': 'TAGCTT', 'AD011': 'GGCTAC', 'AD012': 'CTTGTA', 'AD013': 'AGTCAA', 'AD014': 'AGTTCC'}
