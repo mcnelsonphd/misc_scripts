@@ -122,7 +122,7 @@ do                             	                                   # Do the foll
     grep $searchID $seqsfna | tr -d '>' | cut -d\  -f2,2 > $names  # Compile the list of SeqIDs for dual_fastq_filter command
     RAW1=$sampleID"_R1.fastq.gz"                                   # Define the Read1 output file
     RAW2=$sampleID"_R2.fastq.gz"                                   # Define the Read2 output file
-    dual_fastq_filter.py -f $R1 -r $R2 -o $RAW1 -p $RAW2 -n $names # Filter out the raw read1/read2 to gzipped files
+    dual_fastq_filter.py -f $READ1 -r $READ2 -o $RAW1 -p $RAW2 -n $names # Filter out the raw read1/read2 to gzipped files
     rm $names                                                      # We no longer need the names file so let's get rid of it
 done
 
