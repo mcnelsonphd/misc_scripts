@@ -14,8 +14,8 @@
 #       Allow for optional output directory to be specified instead of CWD.
 #
 # Created by Michael C. Nelson on 2014-09-09.
-# Last revised: 2015-03-23
-# Revision #: 6
+# Last revised: 2015-06-23
+# Revision #: 7
 # Copyright 2014 Michael C. Nelson and the University of Connecticut. All rights reserved.
 # 
 # This script is free software: you can redistribute it and/or modify
